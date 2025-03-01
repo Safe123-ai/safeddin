@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الصيغ الكيميائية</title>
+    <style>
+        /* التصميم العام */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            max-height: 95vh; /* الحد الأقصى للارتفاع */
+            overflow-y: auto; /* تمكين التمرير إذا تجاوز المحتوى الارتفاع */
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        label {
+            font-size: 1rem;
+            color: #34495e;
+        }
+
+        select {
+            padding: 0.5rem;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            color: #2980b9;
+            margin-bottom: 1rem;
+        }
+
+        .dropzone {
+            background: #ecf0f1;
+            border: 2px dashed #bdc3c7;
+            border-radius: 10px;
+            padding: 0.5rem;
+            min-height: 40px; /* ارتفاع أقل */
+            margin-bottom: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .element {
+            background: #3498db;
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .element:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .subscript {
+            vertical-align: sub;
+            font-size: 0.7rem;
+        }
+
+        .feedback {
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+
+        .correct {
+            color: #27ae60;
+        }
+
+        .incorrect {
+            color: #e74c3c;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            margin: 0.3rem;
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        #elements {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        /* التصميم للهواتف المحمولة */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.1rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            button {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
+            }
+
+            .element {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>لعبة الصيغ الكيميائية</h1>
+        <label for="level">اختر المستوى:</label>
+        <select id="level" onchange="changeLevel()">
+            <option value="A">المستوى A</option>
+            <option value="B">المستوى B</option>
+        </select>
+        <h2 id="compound-name"></h2>
+        <div class="dropzone" id="formula-zone"></div>
+        <div id="elements"></div>
+        <p class="feedback" id="feedback"></p>
+        <button onclick="checkFormula()">تصحيح</button>
+        <button onclick="undo()">تراجع</button>
+        <button onclick="nextCompound()">التالي</button>
+    </div>
+
+    <script>
+        let data = {
+            "A": [
+                { "name": "كلوريد الصوديوم", "formula": "NaCl" },
+                { "name": "أكسيد الماغنيسيوم", "formula": "MgO" },
+                { "name": "كبريتيد الزنك", "formula": "ZnS" },
+                { "name": "أكسيد الألمنيوم", "formula": "Al2O3" },
+                { "name": "كلوريد الكالسيوم", "formula": "CaCl2" },
+                { "name": "كلوريد الحديد الثلاثي", "formula": "FeCl3" },
+                { "name": "بروميد البوتاسيوم", "formula": "KBr" },
+                { "name": "كلوريد الألمنيوم", "formula": "AlCl3" },
+                { "name": "كلوريد الخارصين", "formula": "ZnCl2" },
+                { "name": "فلوريد الكالسيوم", "formula": "CaF2" },
+                { "name": "كلوريد البوتاسيوم", "formula": "KCl" },
+                { "name": "أكسيد الصوديوم", "formula": "Na2O" },
+                { "name": "بروميد الفضة", "formula": "AgBr" },
+                { "name": "كبريتيد الألمنيوم", "formula": "Al2S3" },
+                { "name": "فلوريد البوتاسيوم", "formula": "KF" },
+                { "name": "كلوريد الليثيوم", "formula": "LiCl" },
+                { "name": "أكسيد الخارصين", "formula": "ZnO" },
+                { "name": "ثاني أكسيد الكربون", "formula": "CO2" },
+                { "name": "فلوريد الصوديوم", "formula": "NaF" },
+                { "name": "كلوريد الماغنيسيوم", "formula": "MgCl2" },
+                { "name": "كبريتيد الحديد الثلاثي", "formula": "Fe2O3" },
+                { "name": "يوديد البوتاسيوم", "formula": "KI" },
+                { "name": "بروميد الليثيوم", "formula": "LiBr" },
+                { "name": "بروميد الصوديوم", "formula": "NaBr" },
+                { "name": "أكسيد الكالسيوم", "formula": "CaO" },
+                { "name": "كبريتيد الكالسيوم", "formula": "CaS" },
+                { "name": "نتريد الليثيوم", "formula": "Li3N" },
+                { "name": "أكسيد الفضة", "formula": "Ag2O" },
+                { "name": "فوسفيد الزنك", "formula": "Zn3P2" },
+                { "name": "كبريتيد الليثيوم", "formula": "Li2S" },
+                { "name": "يوديد الصوديوم", "formula": "NaI" },
+                { "name": "يوديد الليثيوم", "formula": "LiI" },
+                { "name": "بروميد الكالسيوم", "formula": "CaBr2" },
+                { "name": "يوديد الكالسيوم", "formula": "CaI2" },
+                { "name": "فلوريد الماغنيسيوم", "formula": "MgF2" },
+                { "name": "بروميد الماغنيسيوم", "formula": "MgBr2" },
+                { "name": "كبريتيد الصوديوم", "formula": "Na2S" },
+                { "name": "فوسفيد الليثيوم", "formula": "Li3P" }
+            ],
+            "B": [
+                { "name": "حمض الهيدروكلوريك", "formula": "HCl" },
+                { "name": "حمض الكبريتيك", "formula": "H2SO4" },
+                { "name": "حمض الفوسفوريك", "formula": "H3PO4" },
+                { "name": "حمض الفوسفوروز", "formula": "H3PO3" },
+                { "name": "حمض الكربونيك", "formula": "H2CO3" },
+                { "name": "حمض الكبريتوز", "formula": "H2SO3" },
+                { "name": "حمض النتروز", "formula": "HNO2" },
+                { "name": "هيدروكسيد الصوديوم", "formula": "NaOH" },
+                { "name": "هيدروكسيد الكالسيوم", "formula": "Ca(OH)2" },
+                { "name": "هيدروكسيد الألمنيوم", "formula": "Al(OH)3" },
+                { "name": "هيدروكسيد البوتاسيوم", "formula": "KOH" },
+                { "name": "هيدروكسيد المغنيسيوم", "formula": "Mg(OH)2" },
+                { "name": "هيدروكسيد الحديديك", "formula": "Fe(OH)3" },
+                { "name": "هيدروكسيد الحديدوز", "formula": "Fe(OH)2" },
+                { "name": "كربونات الصوديوم", "formula": "Na2CO3" },
+                { "name": "كربونات الصوديوم الهيدروجينية", "formula": "NaHCO3" },
+                { "name": "كربونات الكالسيوم", "formula": "CaCO3" },
+                { "name": "كربونات الكالسيوم الهيدروجينية", "formula": "Ca(HCO3)2" },
+                { "name": "كربونات المغنيسيوم", "formula": "MgCO3" },
+                { "name": "كربونات المغنيسيوم الهيدروجينية", "formula": "Mg(HCO3)2" },
+                { "name": "فوسفات الفضة", "formula": "Ag3PO4" },
+                { "name": "فوسفات الكالسيوم أحادية الهيدروجينية", "formula": "CaHPO4" },
+                { "name": "كبريتات الصوديوم", "formula": "Na2SO4" },
+                { "name": "كبريتات الصوديوم الهيدروجينية", "formula": "NaHSO4" },
+                { "name": "كبريتات الكالسيوم", "formula": "CaSO4" },
+                { "name": "كبريتات الكالسيوم الهيدروجينية", "formula": "Ca(HSO4)2" },
+                { "name": "كبريتات المغنيسيوم", "formula": "MgSO4" },
+                { "name": "فوسفات الصوديوم", "formula": "Na3PO4" },
+                { "name": "فوسفات الصوديوم ثنائية الهيدروجينية", "formula": "NaH2PO4" },
+                { "name": "فوسفات الكالسيوم", "formula": "Ca3(PO4)2" },
+                { "name": "كرومات البوتاسيوم", "formula": "K2CrO4" },
+                { "name": "ثنائي كرومات البوتاسيوم", "formula": "K2Cr2O7" },
+                { "name": "بيرمنغنات البوتاسيوم", "formula": "KMnO4" },
+                { "name": "كرومات الصوديوم", "formula": "Na2CrO4" },
+                { "name": "أوكسالات الكالسيوم", "formula": "CaC2O4" },
+                { "name": "كربونات الفضة", "formula": "Ag2CO3" },
+                { "name": "كبريتات الحديدوز", "formula": "FeSO4" },
+                { "name": "نترات الأمونيوم", "formula": "NH4NO3" },
+                { "name": "كربونات الأمونيوم", "formula": "(NH4)2CO3" },
+                { "name": "الجير الحي", "formula": "CaO" },
+                { "name": "الجير المطفأ", "formula": "Ca(OH)2" },
+                { "name": "البوتاسا الكاوية", "formula": "KOH" },
+                { "name": "نترات البوتاسيوم", "formula": "KNO3" },
+                { "name": "نترات الصوديوم", "formula": "NaNO3" },
+                { "name": "كربونات البوتاسيوم", "formula": "K2CO3" },
+                { "name": "فوسفات الكالسيوم أحادية الهيدروجين", "formula": "CaHPO4" }
+            ],
+            "elements": ["Li", "Na", "K", "Mg", "Ca", "Ba", "Al", "Ag", "Cu", "Zn", "Fe", "Cr", "Mn", "F", "Cl", "Br", "I", "O", "S", "C", "P", "N", "H", "1", "2", "3", "4", "5", "6", "7", "8", "9", "(", ")"]
+        };
+        
+        let currentLevel = "A";
+        let currentCompoundIndex = 0;
+
+        function changeLevel() {
+            currentLevel = document.getElementById("level").value;
+            currentCompoundIndex = 0;
+            loadCompound();
+        }
+
+        function loadCompound() {
+            document.getElementById("compound-name").innerText = "المركب: " + data[currentLevel][currentCompoundIndex].name;
+            document.getElementById("formula-zone").innerHTML = "";
+            document.getElementById("feedback").innerText = "";
+        }
+
+        function checkFormula() {
+            let userFormula = Array.from(document.getElementById("formula-zone").children)
+                                  .map(el => el.innerText.trim())
+                                  .join("");
+            let correctFormula = data[currentLevel][currentCompoundIndex].formula;
+            let feedback = document.getElementById("feedback");
+            if (userFormula === correctFormula) {
+                feedback.innerText = "إجابة صحيحة!";
+                feedback.className = "feedback correct";
+            } else {
+                feedback.innerText = "إجابة خاطئة! الصيغة الصحيحة هي: " + correctFormula;
+                feedback.className = "feedback incorrect";
+            }
+        }
+
+        function undo() {
+            let zone = document.getElementById("formula-zone");
+            if (zone.lastChild) zone.removeChild(zone.lastChild);
+        }
+
+        function nextCompound() {
+            currentCompoundIndex = (currentCompoundIndex + 1) % data[currentLevel].length;
+            loadCompound();
+        }
+
+        function loadElements() {
+            let elementsDiv = document.getElementById("elements");
+            elementsDiv.innerHTML = "";
+            data.elements.forEach(el => {
+                let span = document.createElement("span");
+                span.innerHTML = el;
+                span.className = "element";
+                span.onclick = function() { addToFormula(el); };
+                elementsDiv.appendChild(span);
+            });
+        }
+
+        function addToFormula(element) {
+            let span = document.createElement("span");
+            span.innerHTML = element;
+            if (!isNaN(element)) {
+                span.className = "subscript";
+            }
+            document.getElementById("formula-zone").appendChild(span);
+        }
+
+        loadCompound();
+        loadElements();
+    </script>
+</body>
+</html>
